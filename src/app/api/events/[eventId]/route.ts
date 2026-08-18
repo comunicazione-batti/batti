@@ -38,3 +38,18 @@ export async function PATCH(req: Request, { params }: { params: { eventId: strin
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ event: data });
 }
+
+/**
+ * Elimina definitivamente l'evento. Grazie a "on delete cascade" nello
+ * schema, vengono eliminati automaticamente anche tutti gli invitati e
+ * lo storico dei check-in collegati.
+ */
+export async function DELETE(_req: Request, { params }: { params: { eventId: string } }) {
+  const session = await getAdminSession();
+  if (!session) return NextResponse.json({ error: "Non autorizzato." }, { status: 401 });
+
+  const db = createAdminSupabaseClient();
+  const { error } = await db.from("events").delete().eq("id", params.eventId);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}

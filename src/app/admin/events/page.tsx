@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { TopBar } from "@/components/TopBar";
 import { NewEventButton } from "@/components/NewEventButton";
+import { EventsList } from "@/components/EventsList";
 import { getAdminSession } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { EventRecord } from "@/lib/types";
@@ -32,22 +32,7 @@ export default async function AdminEventsPage() {
             <p>Crea il primo evento per iniziare a caricare la lista invitati.</p>
           </div>
         ) : (
-          <div>
-            {events.map((ev) => (
-              <Link key={ev.id} href={`/admin/events/${ev.id}`} className="event-row">
-                <div className="info">
-                  <h4>{ev.name}</h4>
-                  <div className="d">
-                    {ev.date || ""}
-                    {ev.description ? ` · ${ev.description}` : ""}
-                  </div>
-                </div>
-                <span className={`pill ${ev.status === "closed" ? "pill-gray" : "pill-sage"}`}>
-                  {ev.status === "closed" ? "Chiuso" : "Attivo"}
-                </span>
-              </Link>
-            ))}
-          </div>
+          <EventsList events={events} />
         )}
       </div>
     </>

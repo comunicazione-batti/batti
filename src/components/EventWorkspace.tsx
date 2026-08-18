@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SplitFlap } from "@/components/SplitFlap";
 import { toast } from "@/components/Toast";
 import { slotLabel } from "@/lib/time";
@@ -359,9 +360,14 @@ function ImportTab({ event, onImported }: { event: EventRecord; onImported: () =
 }
 
 function SettingsTab({ event, onUpdated }: { event: EventRecord; onUpdated: () => void }) {
+  const router = useRouter();
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const guestLink = `${origin}/e/${event.id}`;
   const checkinLink = `${origin}/checkin/${event.id}`;
+
+  const [confirmName, setConfirmName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const canDelete = confirmName.trim() === event.name;
 
   async function setStatus(status: "active" | "closed") {
     const res = await fetch(`/api/events/${event.id}`, {
@@ -384,34 +390,71 @@ function SettingsTab({ event, onUpdated }: { event: EventRecord; onUpdated: () =
     }
   }
 
+  async function deleteEvent() {
+    if (!canDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/events/${event.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast(data.error || "Non è stato possibile eliminare l'evento.");
+        return;
+      }
+      toast("Evento eliminato.");
+      router.push("/admin/events");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
-    <div className="card" style={{ marginTop: 14, maxWidth: 560 }}>
-      <span className="eyebrow">Impostazioni evento</span>
-      <h3 style={{ margin: "8px 0 18px", fontWeight: 500 }}>Stato e link</h3>
-      <div className="field">
-        <label>Link pubblico invitati</label>
-        <input type="text" readOnly value={guestLink} className="mono" style={{ fontSize: 12.5 }} />
-      </div>
-      <div className="field">
-        <label>Link area check-in</label>
-        <input type="text" readOnly value={checkinLink} className="mono" style={{ fontSize: 12.5 }} />
-      </div>
-      <div className="field">
-        <label>Stato evento</label>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className={`btn btn-sm ${event.status !== "closed" ? "btn-primary" : "btn-ghost"}`} onClick={() => setStatus("active")}>
-            Attivo
-          </button>
-          <button className={`btn btn-sm ${event.status === "closed" ? "btn-primary" : "btn-ghost"}`} onClick={() => setStatus("closed")}>
-            Chiuso
-          </button>
+    <>
+      <div className="card" style={{ marginTop: 14, maxWidth: 560 }}>
+        <span className="eyebrow">Impostazioni evento</span>
+        <h3 style={{ margin: "8px 0 18px", fontWeight: 500 }}>Stato e link</h3>
+        <div className="field">
+          <label>Link pubblico invitati</label>
+          <input type="text" readOnly value={guestLink} className="mono" style={{ fontSize: 12.5 }} />
         </div>
-        <div className="hint">Quando l&apos;evento è chiuso, i QR non possono più essere utilizzati per il check-in.</div>
+        <div className="field">
+          <label>Link area check-in</label>
+          <input type="text" readOnly value={checkinLink} className="mono" style={{ fontSize: 12.5 }} />
+        </div>
+        <div className="field">
+          <label>Stato evento</label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className={`btn btn-sm ${event.status !== "closed" ? "btn-primary" : "btn-ghost"}`} onClick={() => setStatus("active")}>
+              Attivo
+            </button>
+            <button className={`btn btn-sm ${event.status === "closed" ? "btn-primary" : "btn-ghost"}`} onClick={() => setStatus("closed")}>
+              Chiuso
+            </button>
+          </div>
+          <div className="hint">Quando l&apos;evento è chiuso, i QR non possono più essere utilizzati per il check-in.</div>
+        </div>
+        <hr style={{ border: "none", borderTop: "1px solid var(--line)", margin: "18px 0" }} />
+        <button className="btn btn-danger btn-sm" onClick={resetData}>
+          Azzera i dati di questo evento
+        </button>
       </div>
-      <hr style={{ border: "none", borderTop: "1px solid var(--line)", margin: "18px 0" }} />
-      <button className="btn btn-danger btn-sm" onClick={resetData}>
-        Azzera i dati di questo evento
-      </button>
-    </div>
+
+      <div className="card" style={{ marginTop: 16, maxWidth: 560, borderColor: "var(--wine)" }}>
+        <span className="eyebrow" style={{ color: "var(--wine)" }}>
+          Zona pericolosa
+        </span>
+        <h3 style={{ margin: "8px 0 6px", fontWeight: 500 }}>Elimina evento</h3>
+        <p style={{ color: "var(--ink-soft)", fontSize: 13.5, margin: "0 0 16px", lineHeight: 1.5 }}>
+          Elimina definitivamente questo evento, tutti gli invitati e lo storico dei check-in. Non
+          può essere annullato. Per confermare, scrivi il nome esatto dell&apos;evento:{" "}
+          <strong>{event.name}</strong>
+        </p>
+        <div className="field">
+          <input type="text" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} placeholder={event.name} />
+        </div>
+        <button className="btn btn-danger btn-block" disabled={!canDelete || deleting} onClick={deleteEvent}>
+          {deleting ? "Eliminazione in corso..." : "Elimina definitivamente questo evento"}
+        </button>
+      </div>
+    </>
   );
 }

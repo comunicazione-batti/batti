@@ -9,7 +9,7 @@ per un evento come un matrimonio.
 1. Vai su https://supabase.com → crea un account gratuito → "New project".
 2. Scegli un nome (es. "battibecco-arrivi"), una password per il database
    (salvala da parte, non serve nell'app ma è bene conservarla) e una
-   regione vicina a te (es. Frankfurt/EU). rnjszL5aSOVCSlzB
+   regione vicina a te (es. Frankfurt/EU).
 3. Attendi il provisioning (1-2 minuti).
 4. Vai su **SQL Editor** (menu a sinistra) → "New query" → incolla tutto il
    contenuto del file `supabase/schema.sql` di questo progetto → **Run**.
